@@ -8,9 +8,11 @@ inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/Kwiki/Atom.pm
+lib/Kwiki/Atom/CGI.pm
+lib/Kwiki/Atom/Server.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
+SIGNATURE			Public-key signature (added by MakeMaker)
 t/compile.t
-SIGNATURE                                Public-key signature (added by MakeMaker)
