@@ -8,7 +8,7 @@ version_from('lib/Kwiki/Atom.pm');
 
 requires(qw(
     perl        5.6.1
-    Kwiki       0.33
+    Kwiki       0.37
     XML::Atom   0.09
 ));
 

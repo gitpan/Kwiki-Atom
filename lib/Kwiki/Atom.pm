@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use XML::Atom;
 use XML::Atom::Feed;
@@ -17,12 +17,13 @@ use Kwiki::Atom::Server;
 
 use constant ATOM_TYPE => "application/atom+xml";
 
-const class_id => 'atom';
-const class_title => 'Atom';
-const css_file => 'atom.css';
-const config_file => 'atom.yaml';
-const cgi_class => 'Kwiki::Atom::CGI';
-const server_class => 'Kwiki::Atom::Server';
+const class_id      => 'atom';
+const class_title   => 'Atom';
+const css_file      => 'atom.css';
+const config_file   => 'atom.yaml';
+const cgi_class     => 'Kwiki::Atom::CGI';
+const server_class  => 'Kwiki::Atom::Server';
+
 field depth => 0;
 field 'headers';
 field 'server';
@@ -108,13 +109,7 @@ sub wrap_header {
     $server->response_content_type($content_type);
     $server->client($self);
 
-    no warnings 'redefine';
-    require Spoon::Cookie;
-    my $ref = Spoon::Cookie->can('content_type');
-    *Spoon::Cookie::content_type = sub {
-        *Spoon::Cookie::content_type = $ref;
-        return( -type => $content_type, @{$self->{headers}});
-    };
+    $self->hub->headers->content_type($content_type);
 }
 
 sub make_entry {
@@ -367,8 +362,8 @@ Kwiki::Atom - Kwiki Atom Plugin
 
 =head1 VERSION
 
-This document describes version 0.14 of Kwiki::Atom, released
-September 11, 2004.
+This document describes version 0.15 of Kwiki::Atom, released
+April 1, 2005.
 
 =head1 SYNOPSIS
 
@@ -405,7 +400,7 @@ Autrijus Tang E<lt>autrijus@autrijus.orgE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2004 by Autrijus Tang E<lt>autrijus@autrijus.orgE<gt>.
+Copyright 2004, 2005 by Autrijus Tang E<lt>autrijus@autrijus.orgE<gt>.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

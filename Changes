@@ -1,3 +1,8 @@
+[Changes for 0.15 - 2005-04-01]
+
+* Tatsuhiko Miyagawa submitted a patch to make Kwiki::Atom
+  work better with cutting-edge Spoon.pm.
+
 [Changes for 0.14 - 2004-09-09]
 
 * Fix atom_feed.png installation error as pointed out by Ingy.
