@@ -1,3 +1,8 @@
+[Changes for 0.09 - 2004-09-03]
+
+* Unicode entities are decoded properly from text/html posts.
+* Also, strip all tags from text/html posts.
+
 [Changes for 0.08 - 2004-09-03]
 
 * We now send out unescaped UTF8 in XML files, instead of

@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -156,7 +156,7 @@ sub make_entry {
 sub update_page {
     my $page = shift;
     my $method = $self->server->request_method;
-    my $entry = do { $self->server->atom_body };
+    my $entry = eval { $self->server->atom_body };
 
     if (!$entry) {
         print "Status: 400\n\n";
@@ -181,7 +181,13 @@ sub update_page {
         eval { $self->server->get_auth_info->{Username} }
             || $self->hub->config->user_default_name
     );
-    $page->content($entry->content->body);
+    my $body = $entry->content->body;
+    if ($entry->content->type =~ /\bx?html\b/i) {
+        $body =~ s/<[^>]+>//g;
+        require HTML::Entities;
+        HTML::Entities::decode_entities($body);
+    }
+    $page->content($body);
     $page->update->store;
 
     return $page;
