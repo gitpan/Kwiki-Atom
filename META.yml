@@ -1,5 +1,5 @@
 name: Kwiki-Atom
-version: 0.13
+version: 0.14
 abstract: Kwiki Atom Plugin
 author: Autrijus Tang <autrijus@autrijus.org>
 license: perl
@@ -11,4 +11,4 @@ requires:
 no_index:
   directory:
     - inc
-generated_by: Module::Install version 0.35
+generated_by: Module::Install version 0.36

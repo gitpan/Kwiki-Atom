@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use XML::Atom;
 use XML::Atom::Feed;
@@ -367,8 +367,8 @@ Kwiki::Atom - Kwiki Atom Plugin
 
 =head1 VERSION
 
-This document describes version 0.13 of Kwiki::Atom, released
-September 5, 2004.
+This document describes version 0.14 of Kwiki::Atom, released
+September 11, 2004.
 
 =head1 SYNOPSIS
 
@@ -430,7 +430,7 @@ __icons/gnome/template/recent_changes_atom_button_icon.html__
 <!-- BEGIN recent_changes_atom_button_icon.html -->
 <img src="icons/gnome/image/atom_feed.png" alt="Atom" />
 <!-- END recent_changes_atom_button_icon.html -->
-__icons/gnome/image/atom_feed.png
+__icons/gnome/image/atom_feed.png__
 iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPBAMAAADJ+Ih5AAAAMFBMVEX////yZ2fh4eH5+fm+
 v7/r6+u3SEjV1dWmenqzs7PPz8/Hx8elpaXGxsbMzMyUlJQfgNlcAAAAAXRSTlMAQObYZgAA
 ABZ0RVh0U29mdHdhcmUAZ2lmMnBuZyAyLjQuNqQzgxcAAAB7SURBVHjaY2DAAEy3d++NelfM
