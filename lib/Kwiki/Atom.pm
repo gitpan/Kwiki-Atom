@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -177,13 +177,10 @@ sub update_page {
         }
     }
 
-    $self->hub->users->current(
-        $self->hub->users->new_user(
-            eval { $self->server->get_auth_info->{Username} }
-              || $self->hub->config->user_default_name
-        )
+    $self->hub->users->current->name(
+        eval { $self->server->get_auth_info->{Username} }
+            || $self->hub->config->user_default_name
     );
-
     $page->content($entry->content->body);
     $page->update->store;
 
@@ -315,8 +312,8 @@ Kwiki::Atom - Kwiki Atom Plugin
 
 =head1 VERSION
 
-This document describes version 0.02 of Kwiki::Atom, released
-Auguest 26, 2004.
+This document describes version 0.07 of Kwiki::Atom, released
+September 3, 2004.
 
 =head1 SYNOPSIS
 
@@ -337,6 +334,10 @@ Currently, this plugin has been tested with the following AtomAPI clients:
 =item * wxAtomClient.py
 
 L<http://piki.bitworking.org/piki.cgi>
+
+=item * ecto
+
+L<http://ecto.kung-foo.tv/>
 
 =back
 

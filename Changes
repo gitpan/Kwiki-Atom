@@ -1,48 +1,32 @@
-----------------------------------------------------------------------
-r11785:  autrijus | 2004-09-02T08:30:18.571446Z
+[Changes for 0.07 - 2004-09-03]
 
-* This be 0.05.
+* Correctly set Username for page metadata.
+
+[Changes for 0.06 - 2004-09-03]
+
+* Beginning of Kwiki::Username support.
+* Header output is no longer suppressed.
+
+[Changes for 0.05 - 2004-09-02]
+
 * Correct output of 201 redirect after a POST.
-----------------------------------------------------------------------
-r11776:  autrijus | 2004-09-01T00:54:48.120782Z
 
-* This be 0.04.
+[Changes for 0.04 - 2004-09-01]
+
 * Adina reported setting cgi->page_name is bad form in older Kwikis.
 * Eliminated GET warnings.
-----------------------------------------------------------------------
-r11774:  autrijus | 2004-09-01T00:03:10.339971Z
 
-* This be 0.03.
+[Changes for 0.03 - 2004-09-01]
+
 * Made interoperable with ecto.
-----------------------------------------------------------------------
-r10087:  autrijus | 2004-08-25T19:19:25.777855Z
-
 * Remove accidental leftover debug statements.
-----------------------------------------------------------------------
-r10077:  autrijus | 2004-08-25T18:58:36.307038Z
 
-* This be 0.02 for real.
+[Changes for 0.02 - 2004-08-25]
+
 * Cleaned up the documentations.
-----------------------------------------------------------------------
-r10066:  autrijus | 2004-08-25T18:48:01.446323Z
-
-* remove redundant files
-----------------------------------------------------------------------
-r10065:  autrijus | 2004-08-25T18:47:16.529004Z
-
-* This be 0.02.
+* Removed redundant files.
 * Implemented POST and PUT; confirmed interop with "wxAtomClientApp.py".
 
-----------------------------------------------------------------------
-r10055:  autrijus | 2004-08-25T14:17:24.243062Z
+[Changes for 0.01 - 2004-08-25]
 
-oops, name
-----------------------------------------------------------------------
-r10054:  autrijus | 2004-08-25T14:16:54.023322Z
-
-initial checking of a sorta-working Kwiki-Atom
-----------------------------------------------------------------------
-r10017:  autrijus | 2004-08-23T12:43:12.678281Z
-
-
-----------------------------------------------------------------------
+* Initial release.
