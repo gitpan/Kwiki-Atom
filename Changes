@@ -1,4 +1,10 @@
-[Changes for 0.10 - 2004-09-03]
+[Changes for 0.11 - 2004-09-04]
+
+* HTML feeds with "&flavor=html".
+* CSS styling for feeds and entries.
+* Now outputs 'text/xml' for user agents not willing to accept Atom.
+
+[Changes for 0.10 - 2004-09-04]
 
 * We no longer send out text after a 201.
 * Corrected error handling by sending out proper SOAP Fault code.

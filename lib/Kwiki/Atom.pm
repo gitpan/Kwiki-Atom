@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -22,11 +22,10 @@ use XML::XPath;
 use Kwiki::Atom::Server;
 
 use constant ATOM_TYPE => "application/atom+xml";
-#use constant ATOM_TYPE => "text/xml";
 
 const class_id => 'atom';
 const class_title => 'Atom';
-#const css_file => 'atom.css';
+const css_file => 'atom.css';
 const config_file => 'atom.yaml';
 const cgi_class => 'Kwiki::Atom::CGI';
 const server_class => 'Kwiki::Atom::Server';
@@ -97,7 +96,22 @@ sub fill_header {
 
 sub wrap_header {
     my $server = $self->server($self->server_class->new);
-    $server->response_content_type(ATOM_TYPE);
+
+    my %accept = map { $_ => 1 }
+                 $server->request_header('Accept') =~ m{([^\s,]+/[^;,]+)}g;
+    my $content_type = 'text/xml'; # fallback
+    foreach my $try_type (qw(
+        application/atom+xml
+        application/x.atom+xml
+        application/xml
+    )) {
+        $accept{$try_type} or next;
+        $content_type = $try_type;
+        last;
+    }
+
+    $content_type .= '; charset=UTF-8';
+    $server->response_content_type($content_type);
     $server->client($self);
 
     no warnings 'redefine';
@@ -105,12 +119,12 @@ sub wrap_header {
     my $ref = Spoon::Cookie->can('content_type');
     *Spoon::Cookie::content_type = sub {
         *Spoon::Cookie::content_type = $ref;
-        return( -type => ATOM_TYPE, @{$self->{headers}});
+        return( -type => $content_type, @{$self->{headers}});
     };
 }
 
 sub make_entry {
-    my ($page, $depth) = @_;
+    my ($page, $depth, $flavor) = @_;
     my $url = $self->server->uri;
 
     my $author = XML::Atom::Person->new;
@@ -131,14 +145,19 @@ sub make_entry {
     my $entry = XML::Atom::Entry->new;
     $entry->title($page->title);
 
-    my $content = XML::Atom::Content->new(Type => 'text/plain');
-    my $elem = $content->elem;
-    my $text = ($content->LIBXML) ? 'XML::LibXML::Text'
-                                    : 'XML::XPath::Node::Text';
-
-    $elem->appendChild($text->new($page->content));
-    $elem->setAttribute('mode', 'escaped');
-    $entry->content($content);
+    my $content;
+    if ($flavor and $flavor eq 'html')  {
+        $entry->content($self->utf8_encode($page->to_html));
+    }
+    else {
+        $content = XML::Atom::Content->new(Type => 'text/plain');
+        my $elem = $content->elem;
+        my $text = ($content->LIBXML) ? 'XML::LibXML::Text'
+                                      : 'XML::XPath::Node::Text';
+        $elem->appendChild($text->new($page->content));
+        $elem->setAttribute('mode', 'escaped');
+        $entry->content($content);
+    }
 
     $entry->summary('');
     $entry->issued( DateTime->from_epoch( epoch => $page->io->ctime )->iso8601 . 'Z' );
@@ -245,26 +264,25 @@ sub atom_feed {
     $self->fill_header;
 
     my $depth = $self->cgi->depth;
+    my $flavor = $self->cgi->flavor;
     my $pages = [
         sort {
             $b->modified_time <=> $a->modified_time 
         } ($depth ? $self->pages->recent_by_count($depth) : $self->pages->all)
     ];
 
-    return $self->generate($pages, $depth); # XXX
+    my $timestamp = @$pages ? $pages->[0]->metadata->edit_unixtime : time;
 
     $self->hub->load_class('cache')->process(
-        sub { $self->generate($pages) }, 'atom', $depth, int(time / 120)
+        sub { $self->generate($pages, $depth, $flavor, $timestamp) },
+        'atom', $depth, $flavor, $timestamp, int(time / 600)
     );
 }
 
-use Spiffy '-yaml';
 sub generate {
-    my ($pages, $depth) = @_;
-    my $datetime = @$pages 
-        ? DateTime->from_epoch( epoch => $pages->[0]->metadata->edit_unixtime )
-        : DateTime->now;
+    my ($pages, $depth, $flavor, $timestamp) = @_;
 
+    my $datetime = DateTime->from_epoch( epoch => $timestamp );
     my $url = $self->server->uri;
     my $link_html = XML::Atom::Link->new;
     $link_html->type('text/html');
@@ -291,7 +309,7 @@ sub generate {
     $self->config->script_name($url);
 
     for my $page (@$pages) {
-        $feed->add_entry( $self->make_entry($page, $depth) );
+        $feed->add_entry( $self->make_entry($page, $depth, $flavor) );
     }
 
     $self->munge($feed->as_xml);
@@ -299,8 +317,10 @@ sub generate {
 
 sub munge {
     my $xml = shift;
+    $xml =~ /<\?xml/ or $xml = qq(<?xml version="1.0"?>$xml);
     $xml =~ s/version="1.0"/version="1.0" encoding="UTF-8"/;
     $xml =~ s/(<\w+)/$1 version="0.3"/;
+    $xml =~ s{\?>}{?><?xml-stylesheet type="text/css" href="css/atom.css"?>};
     return $xml;
 }
 
@@ -308,6 +328,7 @@ package Kwiki::Atom::CGI;
 use Kwiki::CGI '-base';
 
 cgi 'depth';
+cgi 'flavor';
 cgi 'POSTDATA';
 
 1;
@@ -372,7 +393,7 @@ site_description: The Kwiki Wiki
 site_url: http://localhost/par/
 __template/tt2/recent_changes_atom_button.html__
 <!-- BEGIN recent_changes_atom_button.html -->
-<a href="[% script_name %]?action=atom_feed&depth=15" title="AtomFeed">
+<a href="[% script_name %]?action=atom_feed;depth=15;flavor=html" title="AtomFeed">
 [% INCLUDE recent_changes_atom_button_icon.html %]
 </a>
 <!-- END recent_changes_atom_button.html -->
@@ -445,3 +466,106 @@ __template/tt2/kwiki_begin.html__
 </head>
 <body>
 <!-- END kwiki_begin.html -->
+__css/atom.css__
+feed {
+  display:block;
+  font-family:verdana, sans-serif;
+  margin:2%;
+  font-size:90%;
+  color:#000000;
+  background:#ffffff;
+}
+
+title {
+  display:block;
+  font-size:1.3em;
+  color:inherit;
+  background:inherit;
+  font-weight:bold;
+}
+
+tagline, link {
+  display:block;
+  font-size:0.9em;
+}
+
+id, modified, url {
+  display:none;
+}
+
+generator {
+  display:block;
+  font-size:0.9em;
+}
+
+info {
+  display:block;
+  margin:3em 4em 3em 4em;
+  color:#CC3333;
+  background:#FFFF66;
+  border:solid #CCCC66 2px;
+  text-align:center;
+  padding:1.5em;
+  font-family:mono;
+  font-size:0.8em;
+}
+
+entry {
+  display:block;
+  color:inherit;
+  background:inherit;
+  padding:0;
+  margin:1em 1em 2em 1em;
+  
+}
+
+entry modified, entry name {
+  display:inline;
+  color:#999999;
+  background:inherit;
+  font-size:0.8em;
+}
+
+entry created, entry issued, entry id {
+  display:none;
+}
+
+entry title {
+  display:block;
+  font-size:1em;
+  font-weight:bold;
+  color:inherit;
+  background:inherit;
+  padding:1em 1em 0em 1em;
+  margin:0;
+  border-top:solid 1px #dddddd;
+}
+
+img.floatright {
+  padding-left: 1em;
+  float: right;
+}
+
+img.floatleft {
+  float: left;
+  padding-right: 1em;
+  padding-bottom: 0.2em;
+}
+
+summary {
+  display:block;
+  background: #FFFF88;
+  font-size:0.9em;
+  color:inherit;
+  margin:1em;
+  line-height:1.5em;
+}
+
+content {
+  display:block;
+  font-size:0.9em;
+  color:inherit;
+  background:inherit;
+  margin:1em;
+  line-height:1.5em;
+}
