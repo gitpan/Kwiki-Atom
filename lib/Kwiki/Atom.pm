@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -137,7 +137,7 @@ sub make_entry {
     my $text = ($content->LIBXML) ? 'XML::LibXML::Text'
                                     : 'XML::XPath::Node::Text';
 
-    $elem->appendChild($text->new($self->utf8_encode($page->content)));
+    $elem->appendChild($text->new($page->content));
     $elem->setAttribute('mode', 'escaped');
     $entry->content($content);
 
