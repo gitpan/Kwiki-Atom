@@ -27,7 +27,7 @@ sub handle_request {
         my $url = $server->uri;
         $self->fill_header(
             -status => 201,
-            -Content_location => "$url?".$page->id,
+            -Content_location => "$url?action=atom_edit;page_id=".$page->id,
         );
         return;
     }

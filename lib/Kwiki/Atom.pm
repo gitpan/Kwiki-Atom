@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -174,7 +174,7 @@ sub update_page {
 
     $self->hub->users->current(
         $self->hub->users->new_user(
-            eval { $self->server->get_auth_info->{UserName} }
+            eval { $self->server->get_auth_info->{Username} }
               || $self->hub->config->user_default_name
         )
     );
