@@ -1,4 +1,19 @@
 ----------------------------------------------------------------------
+r11776:  autrijus | 2004-09-01T00:54:48.120782Z
+
+* This be 0.04.
+* Adina reported setting cgi->page_name is bad form in older Kwikis.
+* Eliminated GET warnings.
+----------------------------------------------------------------------
+r11774:  autrijus | 2004-09-01T00:03:10.339971Z
+
+* This be 0.03.
+* Made interoperable with ecto.
+----------------------------------------------------------------------
+r10087:  autrijus | 2004-08-25T19:19:25.777855Z
+
+* Remove accidental leftover debug statements.
+----------------------------------------------------------------------
 r10077:  autrijus | 2004-08-25T18:58:36.307038Z
 
 * This be 0.02 for real.

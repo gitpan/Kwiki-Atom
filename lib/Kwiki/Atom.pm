@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -77,8 +77,9 @@ sub toolbar_params {
 #    print X "POSTDATA:\n", $self->cgi->POSTDATA, "\n";
 #    print X "HEADERS:\n", YAML::Dump(\%ENV), $/;
 #    close X;
-    return () unless $ENV{CONTENT_TYPE} eq ATOM_TYPE
-                  or $ENV{CONTENT_TYPE} =~ m{^\w+/xml}; # XXX ecto XXX
+    return () unless $ENV{CONTENT_TYPE} and
+                    ($ENV{CONTENT_TYPE} eq ATOM_TYPE
+                  or $ENV{CONTENT_TYPE} =~ m{^\w+/xml}); # XXX ecto XXX
 
     $self->atom_post;
 

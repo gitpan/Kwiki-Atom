@@ -33,11 +33,12 @@ sub handle_request {
     }
 
     $server->{cgi}->parse_params($ENV{QUERY_STRING});
-    $self->pages->cgi->page_name(
-        $server->{cgi}->param('page_name')
-    );
-    $self->pages->current(undef);
-    my $page = $self->pages->current;
+    if (my $name = $server->{cgi}->param('page_name')) {
+        $page = $self->pages->new_page( $self->pages->name_to_id($name) );
+    }
+    else {
+        $page = $self->pages->current;
+    }
 
     if ($server->request_method eq 'PUT') {
         $self->update_page($page);
