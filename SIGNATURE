@@ -14,10 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 7ff7176d18431c009b8b1664ed51c52a120f8c65 Changes
+SHA1 c92995aa1f777b3db52e5d2eb8aea242a1d4042b Changes
 SHA1 c31379909a09e1bddca639452746fc1e90ada119 MANIFEST
-SHA1 b47ddc73fa7fbfe8c0750f08fac7c4277b1b5749 META.yml
-SHA1 44539cb89dbf20cd8a29fe104664fca3060fa9da Makefile.PL
+SHA1 997f5a293f1a22711d07757b39dbaadf3a2eae5c META.yml
+SHA1 25cd9afd6dd166976713cf592f42a463fb13e326 Makefile.PL
 SHA1 432d06aa8ce139fd0c0326fc798440b8034a88de README
 SHA1 b26ac27e5a57677aa210c0e908b28ff3ba28f03b inc/Module/Install.pm
 SHA1 fd56d5c793014bccac2cd1e61926c4da8538ef99 inc/Module/Install/Base.pm
@@ -27,13 +27,13 @@ SHA1 aabcd47178e4e7b27e340ff5273269c93697c9c1 inc/Module/Install/Makefile.pm
 SHA1 207dfa13341a374fc78325fbeb99bc36659aef2d inc/Module/Install/Metadata.pm
 SHA1 aff9341a15c04faec47089851e43d9d4061337e7 inc/Module/Install/Win32.pm
 SHA1 8e0d347ca21bc18b380d9d1aa5910b8d078a76b7 inc/Module/Install/WriteAll.pm
-SHA1 e6e2c7b9fcdd25fcff703f63a5b2761c7b39e7d5 lib/Kwiki/Atom.pm
+SHA1 9c9646e91a73ba0f89968c190126e215daa0695d lib/Kwiki/Atom.pm
 SHA1 36106ecace37ee8214e6daac07c821f32c2fe599 lib/Kwiki/Atom/Server.pm
 SHA1 1388c49466d75140fb60fdc3dcc64bd51d2387a4 t/compile.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.2.3 (FreeBSD)
 
-iD8DBQFBOdx9tLPdNzw1AaARAnSAAJwJnppgMEAHcgWsnEI48NQpbLtVXACeMth0
-DAIuHHR3tmxcYQbFsD7DmZY=
-=mE3a
+iD8DBQFBOgVDtLPdNzw1AaARAglcAKCJAuBRR+FHMZPK5ZSuLe3VkdziVwCghbby
+jPTMLaB0qJScQoJAnxmHo54=
+=sg00
 -----END PGP SIGNATURE-----

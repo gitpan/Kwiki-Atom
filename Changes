@@ -1,3 +1,13 @@
+[Changes for 0.13 - 2004-09-05]
+
+* Removed dependency on XML::XPath.
+* (XML::XPath is still supported, but may cause problems
+   with non-ASCII characters in the HTML feed.)
+
+[Changes for 0.12 - 2004-09-04]
+
+* Support for using LibXML with XML::Atom.
+
 [Changes for 0.11 - 2004-09-04]
 
 * HTML feeds with "&flavor=html".

@@ -4,12 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.12';
-
-BEGIN { unshift @INC, sub {
-    die if $_[1] eq 'XML/LibXML.pm'
-        or $_[1] eq 'XML/LibXSLT.pm';
-} }
+our $VERSION = '0.13';
 
 use XML::Atom;
 use XML::Atom::Feed;
@@ -18,7 +13,6 @@ use XML::Atom::Entry;
 use XML::Atom::Content;
 
 use DateTime;
-use XML::XPath;
 use Kwiki::Atom::Server;
 
 use constant ATOM_TYPE => "application/atom+xml";
@@ -134,34 +128,59 @@ sub make_entry {
     $link_html->type('text/html');
     $link_html->rel('alternate');
     $link_html->href("$url?".$page->uri);
-    $link_html->title(''); # XXX
+    $link_html->title('');
 
     my $link_edit = XML::Atom::Link->new;
     $link_edit->type(ATOM_TYPE);
     $link_edit->rel('service.edit');
     $link_edit->href("$url?action=atom_edit;page_name=".$page->uri);
-    $link_edit->title(''); # XXX
+    $link_edit->title('');
 
     my $entry = XML::Atom::Entry->new;
     $entry->title($page->title);
 
-    my $content;
+    my $content = XML::Atom::Content->new;
+    my $elem = $content->elem;
+    my $text = ($content->LIBXML) ? 'XML::LibXML::Text'
+                                  : 'XML::XPath::Node::Text';
     if ($flavor and $flavor eq 'html')  {
-        $entry->content($self->utf8_encode($page->to_html));
+        $content->type('text/html');
+
+        my $data = $page->to_html;
+        my $copy = qq(<div xmlns="http://www.w3.org/1999/xhtml">$data</div>);
+        my $node;
+        local $@;
+        eval {
+            if ($content->LIBXML) {
+                require XML::LibXML;
+                my $parser = XML::LibXML->new;
+                my $tree = $parser->parse_string($copy);
+                $node = $tree->getDocumentElement;
+            } else {
+                require XML::XPath;
+                my $xp = XML::XPath->new(xml => $copy);
+                $node = (($xp->find('/')->get_nodelist)[0]->getChildNodes)[0]
+                    if $xp;
+            }
+        };
+        if (!$@ && $node) {
+            $elem->appendChild($node);
+            $elem->setAttribute('mode', 'xml');
+        } else {
+            $elem->appendChild($text->new($data));
+            $elem->setAttribute('mode', 'escaped');
+        }
     }
     else {
-        $content = XML::Atom::Content->new(Type => 'text/plain');
-        my $elem = $content->elem;
-        my $text = ($content->LIBXML) ? 'XML::LibXML::Text'
-                                      : 'XML::XPath::Node::Text';
+        $content->type('text/plain');
         $elem->appendChild($text->new($page->content));
         $elem->setAttribute('mode', 'escaped');
-        $entry->content($content);
     }
 
+    $entry->content($content);
     $entry->summary('');
-    $entry->issued( DateTime->from_epoch( epoch => $page->io->ctime )->iso8601 . 'Z' );
-    $entry->modified( DateTime->from_epoch( epoch => $page->io->mtime )->iso8601 . 'Z' );
+    $entry->issued( DateTime->from_epoch( epoch => $page->io->ctime || time )->iso8601 . 'Z' );
+    $entry->modified( DateTime->from_epoch( epoch => $page->io->mtime || time )->iso8601 . 'Z' );
     $entry->id("$url?".$page->uri);
 
     $entry->author($author);
@@ -273,7 +292,10 @@ sub atom_feed {
 
     my $timestamp = @$pages ? $pages->[0]->metadata->edit_unixtime : time;
 
-    $self->hub->load_class('cache')->process(
+    my $cache = eval { $self->hub->load_class('cache') }
+      or return $self->generate($pages, $depth, $flavor, $timestamp);
+
+    $cache->process(
         sub { $self->generate($pages, $depth, $flavor, $timestamp) },
         'atom', $depth, $flavor, $timestamp, int(time / 600)
     );
@@ -318,7 +340,7 @@ sub generate {
 sub munge {
     my $xml = shift;
     $xml =~ /<\?xml/ or $xml = qq(<?xml version="1.0"?>$xml);
-    $xml =~ s/version="1.0"/version="1.0" encoding="UTF-8"/;
+    $xml =~ s/version="1.0"(?![^>]*encoding=)/version="1.0" encoding="UTF-8"/;
     $xml =~ s/(<\w+)/$1 version="0.3"/;
     $xml =~ s{\?>}{?><?xml-stylesheet type="text/css" href="css/atom.css"?>};
     return $xml;
@@ -345,8 +367,8 @@ Kwiki::Atom - Kwiki Atom Plugin
 
 =head1 VERSION
 
-This document describes version 0.11 of Kwiki::Atom, released
-September 4, 2004.
+This document describes version 0.13 of Kwiki::Atom, released
+September 5, 2004.
 
 =head1 SYNOPSIS
 
@@ -356,6 +378,9 @@ September 4, 2004.
 =head1 DESCRIPTION
 
 This Kwiki plugin provides Atom 0.3 integration with Kwiki.
+
+If you plan to offer your Atom feeds to the public, please consider installing
+the B<Kwiki::Cache> module, which can significantly reduce the server load.
 
 For more info about this kind of integration, please refer to
 L<http://www.xml.com/pub/a/2004/04/14/atomwiki.html>.
