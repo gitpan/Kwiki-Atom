@@ -1,12 +1,25 @@
 NAME
     Kwiki::Atom - Kwiki Atom Plugin
 
-SYNOPSIS
-DESCRIPTION
-    This is merely a stub pre-release. It does not do anything really
-    sensible yet, and had not been checked for interoperability.
+VERSION
+    This document describes version 0.02 of Kwiki::Atom, released Auguest
+    26, 2004.
 
-    Please check back in a few days.
+SYNOPSIS
+        % cd /path/to/kwiki
+        % kwiki -add Kwiki::Atom
+
+DESCRIPTION
+    This Kwiki plugin provides Atom 0.3 integration with Kwiki.
+
+    For more info about this kind of integration, please refer to
+    <http://www.xml.com/pub/a/2004/04/14/atomwiki.html>.
+
+    Currently, this plugin has been tested with the following AtomAPI
+    clients:
+
+    * wxAtomClient.py
+        <http://piki.bitworking.org/piki.cgi>
 
 AUTHOR
     Autrijus Tang <autrijus@autrijus.org>

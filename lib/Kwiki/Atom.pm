@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use DateTime;
 use XML::Atom;
@@ -18,6 +18,12 @@ const class_id => 'atom';
 const class_title => 'Atom';
 #const css_file => 'atom.css';
 const config_file => 'atom.yaml';
+const cgi_class => 'Kwiki::Atom::CGI';
+field depth => 0;
+field 'server';
+
+sub process {
+}
 
 sub register {
     my $registry = shift;
@@ -31,6 +37,7 @@ sub register {
     $registry->add(toolbar => 'edit_atom_button', 
                    template => 'edit_atom_button.html',
                    show_for => ['display'],
+                   params_class => $self->class_id,
                   );
 }
 
@@ -53,8 +60,23 @@ sub fill_links {
     return;
 }
 
+sub toolbar_params {
+    return () unless $ENV{CONTENT_TYPE} eq 'application/atom+xml';
+
+    $self->atom_post;
+
+    my %header = &Spoon::Cookie::content_type;
+    print CGI::header(%header);
+    print $header{-warning} if exists $header{-warning};
+    exit;
+}
+
 sub fill_header {
     my @headers = @_;
+
+    $self->server(XML::Atom::Server->new);
+
+    no warnings 'redefine';
     require Spoon::Cookie;
     my $ref = Spoon::Cookie->can('content_type');
     *Spoon::Cookie::content_type = sub {
@@ -63,19 +85,24 @@ sub fill_header {
     };
 }
 
-
 sub make_entry {
-    my $page = shift;
-    my $url = $self->config->site_url . '?' . $page->uri;
+    my ($page, $depth) = @_;
+    my $url = $self->server->uri;
 
     my $author = XML::Atom::Person->new;
     $author->name($page->metadata->edit_by);
 
-    my $link = XML::Atom::Link->new;
-    $link->type('text/html');
-    $link->rel('alternate');
-    $link->href($url);
-    $link->title($page->id);
+    my $link_html = XML::Atom::Link->new;
+    $link_html->type('text/html');
+    $link_html->rel('alternate');
+    $link_html->href("$url?".$page->uri);
+    $link_html->title($page->id);
+
+    my $link_edit = XML::Atom::Link->new;
+    $link_edit->type('application/atom+xml');
+    $link_edit->rel('service.edit');
+    $link_edit->href("$url?action=atom_edit&page_name=".$page->id);
+    $link_edit->title($page->id);
 
     my $entry = XML::Atom::Entry->new;
     $entry->title($page->id);
@@ -87,53 +114,90 @@ sub make_entry {
             Type => 'text/plain',
             Body => $self->utf8_encode($page->content),
         );
-    });
-    # $entry->summary('');
+    }) if $depth;
+    $entry->summary('');
     $entry->issued( DateTime->from_epoch( epoch => $page->io->ctime )->iso8601 . 'Z' );
     $entry->modified( DateTime->from_epoch( epoch => $page->io->mtime )->iso8601 . 'Z' );
-    $entry->id($url);
+    $entry->id("$url?".$page->uri);
 
     $entry->author($author);
-    $entry->add_link($link);
+    $entry->add_link($link_html);
+    $entry->add_link($link_edit);
 
     return $entry;
 }
 
-sub atom_post {
-    my $server = XML::Atom::Server->new;
-    my $entry = $server->atom_body;
-    my $page = $self->pages->new_page($entry->title);
-    if ($page->exists) {
-        $self->fill_header( -status => 409 );
-        return '';
+sub update_page {
+    my $page = shift;
+    my $method = $self->server->request_method;
+    my $entry = $self->server->atom_body;
+
+    open Y, ">>/tmp/y";
+    print Y "$method - $entry - $page - ".$self->cgi->POSTDATA."\n";
+    close Y;
+
+    if (!$page) {
+        $page = $self->pages->new_page($entry->title);
+
+        if ($page->exists and $method eq 'POST') {
+            $self->fill_header(
+                -status => 409,
+                -type => 'text/plain',
+                -warning => 'This page already exists',
+            );
+            return undef;
+        }
     }
+
     $self->hub->users->current(
         $self->hub->users->new_user(
-            $server->get_auth_info->{UserName}
+            $self->server->get_auth_info->{UserName}
         )
     );
-    $page->content($entry->content);
+
+    $page->content($entry->content->body);
     $page->update->store;
-    return $self->redirect($page->uri);
+}
+
+sub atom_post {
+    $self->fill_header;
+    $self->server->{request_content} = $self->cgi->POSTDATA
+        if $self->server->request_content eq 'POST';
+
+    my $page = $self->update_page or return;
+
+    my $url = $self->server->uri;
+    $self->fill_header(
+        -status => 201,
+        -Content_location => "$url?".$page->id,
+    );
+
+    return;
 }
 
 sub atom_edit {
-    my $page = $self->pages->current;
-    my $entry = $self->make_entry($page);
     $self->fill_header;
+    my $page = $self->pages->current;
+
+    if ($self->server->request_method eq 'PUT') {
+        $self->update_page($page);
+    }
+
+    my $entry = $self->make_entry($page, 1);
     return $entry->as_xml;
 }
 
 sub atom_feed {
-    my $depth = 15;
+    $self->fill_header;
+
+    my $depth = $self->cgi->depth;
     my $pages = [
         sort {
             $b->modified_time <=> $a->modified_time 
-        } $self->pages->recent_by_count($depth)
+        } ($depth ? $self->pages->recent_by_count($depth) : $self->pages->all)
     ];
 
-    $self->fill_header;
-    return $self->generate($pages); # XXX
+    return $self->generate($pages, $depth); # XXX
 
     $self->hub->load_class('cache')->process(
         sub { $self->generate($pages) }, 'atom', $depth, int(time / 120)
@@ -142,35 +206,51 @@ sub atom_feed {
 
 use Spiffy '-yaml';
 sub generate {
-    my $pages = shift;
+    my ($pages, $depth) = @_;
     my $datetime = @$pages 
         ? DateTime->from_epoch( epoch => $pages->[0]->metadata->edit_unixtime )
         : DateTime->now;
 
-    my $link = XML::Atom::Link->new;
-    $link->type('text/html');
-    $link->rel('alternate');
-    $link->title($self->config->site_title);
-    $link->href($self->config->site_url);
+    my $url = $self->server->uri;
+    my $link_html = XML::Atom::Link->new;
+    $link_html->type('text/html');
+    $link_html->rel('alternate');
+    $link_html->title($self->config->site_title);
+    $link_html->href($url);
+
+    my $link_post = XML::Atom::Link->new;
+    $link_post->type('application/atom+xml');
+    $link_post->rel('service.post');
+    $link_post->title($self->config->site_title);
+    $link_post->href("$url?action=atom_post");
 
     my $feed = XML::Atom::Feed->new;
     $feed->title($self->config->site_title);
     $feed->info($self->config->site_title);
-    $feed->add_link($link);
+    $feed->add_link($link_html);
+    $feed->add_link($link_post);
     $feed->modified($datetime->iso8601 . 'Z');
 
     my $author = XML::Atom::Person->new;
     $author->name($self->config->site_url);
 
-    $self->config->script_name(
-        $self->config->site_url . $self->config->script_name
-    );
+    $self->config->script_name($url);
+
     for my $page (@$pages) {
-        $feed->add_entry( $self->make_entry($page) );
+        $feed->add_entry( $self->make_entry($page, $depth) );
     }
     $feed->as_xml;
 }
 
+package Kwiki::Atom::CGI;
+use Kwiki::CGI '-base';
+
+cgi 'depth';
+cgi 'POSTDATA';
+
+1;
+
+package Kwiki::Atom;
 1;
 
 __DATA__
@@ -179,14 +259,32 @@ __DATA__
 
 Kwiki::Atom - Kwiki Atom Plugin
 
+=head1 VERSION
+
+This document describes version 0.02 of Kwiki::Atom, released
+Auguest 26, 2004.
+
 =head1 SYNOPSIS
+
+    % cd /path/to/kwiki
+    % kwiki -add Kwiki::Atom
 
 =head1 DESCRIPTION
 
-This is merely a stub pre-release.  It does not do anything really
-sensible yet, and had not been checked for interoperability.
+This Kwiki plugin provides Atom 0.3 integration with Kwiki.
 
-Please check back in a few days.
+For more info about this kind of integration, please refer to
+L<http://www.xml.com/pub/a/2004/04/14/atomwiki.html>.
+
+Currently, this plugin has been tested with the following AtomAPI clients:
+
+=over 4
+
+=item * wxAtomClient.py
+
+L<http://piki.bitworking.org/piki.cgi>
+
+=back
 
 =head1 AUTHOR
 
@@ -204,10 +302,10 @@ See http://www.perl.com/perl/misc/Artistic.html
 =cut
 __config/atom.yaml__
 site_description: The Kwiki Wiki
-site_url: http://www.kwiki.org/
+site_url: http://localhost/par/
 __template/tt2/recent_changes_atom_button.html__
 <!-- BEGIN recent_changes_atom_button.html -->
-<a href="[% script_name %]?action=atom_feed" title="AtomFeed">
+<a href="[% script_name %]?action=atom_feed&depth=15" title="AtomFeed">
 [% INCLUDE recent_changes_atom_button_icon.html %]
 </a>
 <!-- END recent_changes_atom_button.html -->
