@@ -1,8 +1,9 @@
 package Kwiki::Atom::Server;
+use strict;
 use base 'XML::Atom::Server';
 
 sub client { $_[0]{client} = $_[1] if @_ > 1; $_[0]{client} }
-sub print  { $_[0]{print}  = $_[1] if @_ > 1; $_[0]{print} }
+sub print  { $_[0]{print} .= $_[1] if @_ > 1; $_[0]{print} }
 
 *XML::Atom::Server::textValue = \&XML::Atom::Util::textValue;
 
@@ -22,26 +23,28 @@ sub handle_request {
 
 #    local $SIG{__DIE__} = sub { print "\n\n@_\n"; exit };
 
+    my $page;
+
     if ($server->request_method eq 'POST') {
-        my $page = $self->update_page or return;
+        $page = $self->update_page or return '';
         my $url = $server->uri;
         $self->fill_header(
             -status => 201,
-            -Content_location => "$url?action=atom_edit;page_id=".$page->id,
+            -location => "$url?action=atom_edit;page_id=".$page->id,
         );
-        return;
-    }
-
-    $server->{cgi}->parse_params($ENV{QUERY_STRING});
-    if (my $name = $server->{cgi}->param('page_name')) {
-        $page = $self->pages->new_page( $self->pages->name_to_id($name) );
     }
     else {
-        $page = $self->pages->current;
-    }
+        $server->{cgi}->parse_params($ENV{QUERY_STRING});
+        if (my $name = $server->{cgi}->param('page_name')) {
+            $page = $self->pages->new_page( $self->pages->name_to_id($name) );
+        }
+        else {
+            $page = $self->pages->current;
+        }
 
-    if ($server->request_method eq 'PUT') {
-        $self->update_page($page);
+        if ($server->request_method eq 'PUT') {
+            $self->update_page($page);
+        }
     }
 
     my $entry = $self->make_entry($page, 1);

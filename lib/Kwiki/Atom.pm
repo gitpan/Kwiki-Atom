@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -31,6 +31,7 @@ const config_file => 'atom.yaml';
 const cgi_class => 'Kwiki::Atom::CGI';
 const server_class => 'Kwiki::Atom::Server';
 field depth => 0;
+field 'headers';
 field 'server';
 
 sub process {
@@ -85,13 +86,17 @@ sub toolbar_params {
 
     my %header = &Spoon::Cookie::content_type;
     print CGI::header(%header);
-    print $header{-warning} if exists $header{-warning};
+    print $header{-warning}, $/ if exists $header{-warning};
+    print $self->server->print;
     exit;
 }
 
 sub fill_header {
-    my @headers = @_;
+    $self->wrap_header if !$self->headers;
+    $self->headers( [ @{$self->headers||[]}, @_ ] );
+}
 
+sub wrap_header {
     my $server = $self->server($self->server_class->new);
     $server->response_content_type(ATOM_TYPE);
     $server->client($self);
@@ -101,7 +106,7 @@ sub fill_header {
     my $ref = Spoon::Cookie->can('content_type');
     *Spoon::Cookie::content_type = sub {
         *Spoon::Cookie::content_type = $ref;
-        return( -type => ATOM_TYPE, @headers );
+        return( -type => ATOM_TYPE, @{$self->{headers}});
     };
 }
 
@@ -181,6 +186,8 @@ sub update_page {
 
     $page->content($entry->content->body);
     $page->update->store;
+
+    return $page;
 }
 
 sub atom_list {
