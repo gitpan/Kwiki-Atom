@@ -37,7 +37,7 @@ sub handle_request {
     }
     else {
         $server->{cgi}->parse_params($ENV{QUERY_STRING});
-        if (my $name = $server->{cgi}->param('page_name')) {
+        if (my $name = $self->utf8_decode($server->{cgi}->param('page_name'))) {
             $page = $self->pages->new_page( $self->pages->name_to_id($name) );
         }
         else {

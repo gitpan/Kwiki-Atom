@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -59,7 +59,7 @@ sub fill_links {
     push @{ $self->hub->{links}{all} }, ($name ? {
         rel => 'alternate',
         type => ATOM_TYPE,
-        href => "$url?action=atom_edit;page_name=". $self->hub->cgi->page_name,
+        href => "$url?action=atom_edit;page_name=". $self->pages->current->uri,
     } : ()), {
         rel => 'service.feed',
         type => ATOM_TYPE,
@@ -120,16 +120,16 @@ sub make_entry {
     $link_html->type('text/html');
     $link_html->rel('alternate');
     $link_html->href("$url?".$page->uri);
-    $link_html->title($page->id);
+    $link_html->title(''); # XXX
 
     my $link_edit = XML::Atom::Link->new;
     $link_edit->type(ATOM_TYPE);
     $link_edit->rel('service.edit');
-    $link_edit->href("$url?action=atom_edit;page_name=".$page->id);
-    $link_edit->title($page->id);
+    $link_edit->href("$url?action=atom_edit;page_name=".$page->uri);
+    $link_edit->title(''); # XXX
 
     my $entry = XML::Atom::Entry->new;
-    $entry->title($page->id);
+    $entry->title($page->title);
 
     my $content = XML::Atom::Content->new(Type => 'text/plain');
     my $elem = $content->elem;
@@ -324,7 +324,7 @@ Kwiki::Atom - Kwiki Atom Plugin
 
 =head1 VERSION
 
-This document describes version 0.10 of Kwiki::Atom, released
+This document describes version 0.11 of Kwiki::Atom, released
 September 4, 2004.
 
 =head1 SYNOPSIS
