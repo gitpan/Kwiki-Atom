@@ -26,12 +26,14 @@ sub handle_request {
     my $page;
 
     if ($server->request_method eq 'POST') {
-        $page = $self->update_page or return '';
+        $page = $self->update_page or return undef;
         my $url = $server->uri;
         $self->fill_header(
             -status => 201,
             -location => "$url?action=atom_edit;page_id=".$page->id,
         );
+        # $server->{is_soap} = 0;
+        # return '';
     }
     else {
         $server->{cgi}->parse_params($ENV{QUERY_STRING});
@@ -49,6 +51,11 @@ sub handle_request {
 
     my $entry = $self->make_entry($page, 1);
     return $self->munge($entry->as_xml);
+}
+
+sub show_error {
+    my $self = shift;
+    $self->SUPER::show_error($self->{_error});
 }
 
 sub send_http_header { return }

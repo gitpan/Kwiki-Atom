@@ -4,7 +4,7 @@ use warnings;
 use Kwiki::Plugin '-Base';
 use Kwiki::Display;
 use mixin 'Kwiki::Installer';
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 BEGIN { unshift @INC, sub {
     die if $_[1] eq 'XML/LibXML.pm'
@@ -86,7 +86,6 @@ sub toolbar_params {
 
     my %header = &Spoon::Cookie::content_type;
     print CGI::header(%header);
-    print $header{-warning}, $/ if exists $header{-warning};
     print $self->server->print;
     exit;
 }
@@ -165,9 +164,16 @@ sub update_page {
     }
 
     if (!$page) {
-        $page = $self->pages->new_page($entry->title);
+        my $title = $entry->title;
+        if ($entry->content->type =~ /\bx?html\b/i) {
+            require HTML::Entities;
+            HTML::Entities::decode_entities($title);
+        }
+        $page = $self->pages->new_page($title);
 
         if ($page->exists and $method eq 'POST') {
+            $self->server->response_code(409);
+            $self->server->{_error} = 'This page already exists';
             $self->fill_header(
                 -status => 409,
                 -type => 'text/plain',
@@ -318,8 +324,8 @@ Kwiki::Atom - Kwiki Atom Plugin
 
 =head1 VERSION
 
-This document describes version 0.07 of Kwiki::Atom, released
-September 3, 2004.
+This document describes version 0.10 of Kwiki::Atom, released
+September 4, 2004.
 
 =head1 SYNOPSIS
 
